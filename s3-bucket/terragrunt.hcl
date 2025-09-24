@@ -6,10 +6,10 @@ include "root" {
 }
 
 
-include "envcommon" {
-  path = "${dirname(find_in_parent_folders("root.hcl"))}/_envcommon/s3-bucket.hcl"
-  expose = true
-}
+# include "envcommon" {
+#  path = "${dirname(find_in_parent_folders("root.hcl"))}/_envcommon/s3-bucket.hcl"
+#  expose = true
+#}
 
 
 terraform {
