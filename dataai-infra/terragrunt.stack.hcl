@@ -1,5 +1,5 @@
 unit "s3_bucket" {
-  source ="git@github.com:shridharMe/infrastructure-catalog.git//units/dataai-infra/s3-bucket?ref=main"
+  source ="git@github.com:shridharMe/infrastructure-catalog.git//units/s3-bucket?ref=main"
   path   = "s3_bucket"
 
   no_dot_terragrunt_stack = true
