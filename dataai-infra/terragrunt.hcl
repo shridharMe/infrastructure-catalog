@@ -47,3 +47,24 @@ inputs = {
   bucket           = local.account_values.bucket_name
   tags             = local.common_tags
 }
+
+
+remote_state {
+  backend = "s3"
+  
+  generate = {
+    path      = "backend.tf"
+    if_exists = "overwrite_terragrunt"
+  }
+  
+  config = {
+    bucket         = local.account_values.state_bucket
+    key            = "${path_relative_to_include()}/terraform.tfstate"
+    region         = local.account_values.region
+    encrypt        = true
+    dynamodb_table = "terraform-locks-${local.account_values.account}-${local.account_values.region}"
+    
+    # Use assume role for cross-account state management
+    role_arn = local.account_values.assume_role_arn != "" ? local.account_values.assume_role_arn : null
+  }
+}
