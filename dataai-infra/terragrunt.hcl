@@ -29,7 +29,7 @@ locals {
 # Inputs passed to all child configurations in this stack
 inputs = {
   # Core configuration
-  aws_region       = local.account_values.region
+  region       = local.account_values.region
   account_id       = local.account_values.account_id
   account          = local.account_values.account
   environment      = local.account_values.environment
