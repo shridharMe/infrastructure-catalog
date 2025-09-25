@@ -21,7 +21,7 @@ terraform {
   backend "s3" {
     bucket         = var.state_bucket
     key            = var.state_key
-    region         = var.aws_region
+    region         = var.region
     encrypt        = true
     dynamodb_table = var.dynamodb_table
     
@@ -55,7 +55,7 @@ terraform {
 
 # AWS provider with dynamic configuration
 provider "aws" {
-  region = var.aws_region
+  region = var.region
   
   # Assume role for cross-account deployment (if provided)
   dynamic "assume_role" {
