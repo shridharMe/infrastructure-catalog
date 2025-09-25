@@ -11,6 +11,31 @@ include "root" {
   path = find_in_parent_folders("root.hcl")
 }
 
+# Configure remote state for this stack
+remote_state {
+  backend = "s3"
+  
+  generate = {
+    path      = "backend.tf"
+    if_exists = "overwrite_terragrunt"
+  }
+  
+  config = {
+    bucket         = local.account_values.state_bucket
+    key            = "${path_relative_to_include()}/terraform.tfstate"
+    region         = local.account_values.region
+    encrypt        = true
+    dynamodb_table = "terraform-locks-${local.account_values.account}-${local.account_values.region}"
+    
+    # S3 bucket security settings
+    skip_bucket_versioning             = false
+    skip_bucket_ssencryption           = false
+    skip_bucket_root_access            = false
+    skip_bucket_enforced_tls           = false
+    skip_bucket_public_access_blocking = false
+  }
+}
+
 # Local variables for this stack
 locals {
   # Read values directly from the included file
