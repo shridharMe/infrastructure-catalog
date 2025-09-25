@@ -80,7 +80,7 @@ generate "variables" {
   contents  = <<EOF
 # Common variables used across all configurations
 
-variable "aws_region" {
+variable "region" {
   description = "AWS region for resources"
   type        = string
 }
