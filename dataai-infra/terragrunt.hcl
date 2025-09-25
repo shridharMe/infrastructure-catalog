@@ -54,19 +54,19 @@ generate "provider" {
   contents  = <<EOF
 # AWS provider with dynamic configuration
 provider "aws" {
-  region = "${local.values.region}"
+  region = "${local.account_values.region}"
   
   # Assume role for cross-account deployment
   assume_role {
-    role_arn = "${local.values.assume_role_arn}"
+    role_arn = "${local.account_values.assume_role_arn}"
   }
   
   # Default tags applied to all resources
   default_tags {
     tags = {
-      Account     = "${local.values.account}"
-      Region      = "${local.values.region}"
-      Environment = "${local.values.environment}"
+      Account     = "${local.account_values.account}"
+      Region      = "${local.account_values.region}"
+      Environment = "${local.account_values.environment}"
       ManagedBy   = "terragrunt"
       Project     = "multi-account-infrastructure"
       CreatedBy   = "terragrunt-stack"
@@ -74,4 +74,26 @@ provider "aws" {
   }
 }
 EOF
+}
+
+# Inputs passed to all child configurations in this stack
+inputs = {
+  # Core configuration
+  region       = local.account_values.region
+  account_id       = local.account_values.account_id
+  account          = local.account_values.account
+  environment      = local.account_values.environment
+  assume_role_arn  = local.account_values.assume_role_arn
+  
+  # State configuration
+  state_bucket     = local.account_values.state_bucket
+  state_key        = "${path_relative_to_include("root")}/terraform.tfstate"
+  dynamodb_table   = "terraform-locks-${local.account_values.account}-${local.account_values.region}"
+  
+  # Tags
+  default_tags     = local.common_tags
+  
+  # S3 module specific inputs
+  bucket           = local.account_values.bucket_name
+  tags             = local.common_tags
 }
