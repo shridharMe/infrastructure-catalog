@@ -68,3 +68,35 @@ remote_state {
     role_arn = local.account_values.assume_role_arn != "" ? local.account_values.assume_role_arn : null
   }
 }
+
+# Generate AWS provider configuration dynamically based on stack values
+generate "provider" {
+  path      = "terragrunt-provider.tf"
+  if_exists = "overwrite_terragrunt"
+  contents  = <<EOF
+# AWS provider with dynamic configuration
+provider "aws" {
+  region = "${local.account_values.region}"
+  
+  # Assume role for cross-account deployment (if provided)
+  dynamic "assume_role" {
+    for_each = "${local.account_values.assume_role_arn}" != "" ? [1] : []
+    content {
+      role_arn = "${local.account_values.assume_role_arn}"
+    }
+  }
+  
+  # Default tags applied to all resources
+  default_tags {
+    tags = {
+      Account     = "${local.account_values.account}"
+      Region      = "${local.account_values.region}"
+      Environment = "${local.account_values.environment}"
+      ManagedBy   = "terragrunt"
+      Project     = "multi-account-infrastructure"
+      CreatedBy   = "terragrunt-stack"
+    }
+  }
+}
+EOF
+}
