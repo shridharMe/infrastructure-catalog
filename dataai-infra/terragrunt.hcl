@@ -47,19 +47,3 @@ inputs = {
   bucket           = local.account_values.bucket_name
   tags             = local.common_tags
 }
-
-generate "outputs" {
-  path      = "terragrunt-outputs.tf"
-  if_exists = "overwrite_terragrunt"
-  contents  = <<EOF
-# Common outputs used across all configurations
-
-output "assume_role_arn" {
-  value     = local.account_values.assume_role_arn
-}
-
-output "region" {
-   value     = local.account_values.region
-}
-EOF
-}
