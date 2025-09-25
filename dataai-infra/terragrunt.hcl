@@ -47,3 +47,17 @@ inputs = {
   bucket           = local.account_values.bucket_name
   tags             = local.common_tags
 }
+remote_state {
+  backend = "s3"
+  config = {
+    encrypt        = true
+    bucket         = local.account_values.state_bucket
+    key            = terraform.tfstate"
+    region         = local.account_values.region
+    
+  }
+  generate = {
+    path      = "backend.tf"
+    if_exists = "overwrite_terragrunt"
+  }
+}
