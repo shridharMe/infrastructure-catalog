@@ -1,6 +1,6 @@
 unit "s3_bucket" {
   source ="git@github.com:shridharMe/infrastructure-catalog.git//dataai-infra/s3_bucket?ref=main"
   path   = "s3_bucket"
-  no_dot_terragrunt_stack = true
+  no_dot_terragrunt_stack = false
   ## Add any additional configuration for the service unit here
 }
