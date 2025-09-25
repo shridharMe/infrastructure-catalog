@@ -1,13 +1,12 @@
-# Include the parent terragrunt.hcl that contains the inputs and remote state
-include "parent" {
-  path = find_in_parent_folders("terragrunt.hcl")
+# Include the root configuration for global settings
+include "root" {
+  path = find_in_parent_folders("root.hcl")
 }
 
 # Local variables to read values from terragrunt.values.hcl
 locals {
-  values = read_terragrunt_config(find_in_parent_folders("terragrunt.values.hcl")).locals
+  values = read_terragrunt_config(find_in_parent_folders("terragrunt.values.hcl"))
 }
-
 
 
 terraform {
