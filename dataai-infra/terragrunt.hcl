@@ -1,28 +1,31 @@
-# Root Terragrunt Configuration for Infrastructure Catalog
-# This file should be placed in your git@github.com:shridharMe/infrastructure-catalog.git//dataai-infra/terragrunt.hcl
+# Root Terragrunt Configuration
+# This provides common configuration for all stacks
 
-# Remote state configuration with account-specific bucket
-remote_state {
-  backend = "s3"
-  
-  generate = {
-    path      = "backend.tf"
-    if_exists = "overwrite_terragrunt"
+# Global locals that can be used by all child configurations
+locals {
+  # Global tags applied to all resources
+  global_tags = {
+    ManagedBy = "terragrunt"
+    Project   = "multi-account-infrastructure"
+    CreatedBy = "terragrunt-stack"
   }
-  
-  config = {
-    # Use account-specific state bucket
-    bucket = get_env("TG_STATE_BUCKET", "default-state-bucket")
-    key    = "${path_relative_to_include()}/terraform.tfstate"
-    region = get_env("TG_REGION", "us-east-1")
+}
+
+# Generate backend configuration dynamically
+generate "backend" {
+  path      = "backend.tf"
+  if_exists = "overwrite_terragrunt"
+  contents  = <<EOF
+# Backend configuration for Terraform state
+terraform {
+  backend "s3" {
+    bucket         = var.state_bucket
+    key            = var.state_key
+    region         = var.aws_region
+    encrypt        = true
+    dynamodb_table = var.dynamodb_table
     
-    # Enable encryption and versioning
-    encrypt = true
-    
-    # DynamoDB table for state locking (account-specific)
-    dynamodb_table = "terraform-locks-${get_env("TG_ACCOUNT", "default")}-${get_env("TG_REGION", "us-east-1")}"
-    
-    # S3 bucket settings
+    # S3 bucket security settings
     skip_bucket_versioning             = false
     skip_bucket_ssencryption           = false
     skip_bucket_root_access            = false
@@ -30,12 +33,15 @@ remote_state {
     skip_bucket_public_access_blocking = false
   }
 }
+EOF
+}
 
-# Generate AWS provider with assume role configuration
+# Generate AWS provider configuration dynamically
 generate "provider" {
   path      = "provider.tf"
   if_exists = "overwrite_terragrunt"
   contents  = <<EOF
+# AWS Provider Configuration
 terraform {
   required_version = ">= 1.0"
   
@@ -47,13 +53,16 @@ terraform {
   }
 }
 
-# AWS Provider with assume role configuration
+# AWS provider with dynamic configuration
 provider "aws" {
   region = var.aws_region
   
-  # Assume role for cross-account deployment
-  assume_role {
-    role_arn = var.assume_role_arn
+  # Assume role for cross-account deployment (if provided)
+  dynamic "assume_role" {
+    for_each = var.assume_role_arn != "" ? [1] : []
+    content {
+      role_arn = var.assume_role_arn
+    }
   }
   
   # Default tags applied to all resources
@@ -64,13 +73,31 @@ provider "aws" {
 EOF
 }
 
-# Generate common variables
+# Generate common variables that all configurations will need
 generate "variables" {
   path      = "variables.tf"
   if_exists = "overwrite_terragrunt"
   contents  = <<EOF
+# Common variables used across all configurations
+
 variable "aws_region" {
   description = "AWS region for resources"
+  type        = string
+}
+
+variable "state_bucket" {
+  description = "S3 bucket for Terraform state"
+  type        = string
+}
+
+variable "state_key" {
+  description = "S3 key for Terraform state file"
+  type        = string
+  default     = "terraform.tfstate"
+}
+
+variable "dynamodb_table" {
+  description = "DynamoDB table for state locking"
   type        = string
 }
 
@@ -92,6 +119,7 @@ variable "environment" {
 variable "assume_role_arn" {
   description = "ARN of the role to assume for deployment"
   type        = string
+  default     = ""
 }
 
 variable "default_tags" {
@@ -102,24 +130,19 @@ variable "default_tags" {
 EOF
 }
 
-# Local variables for common configuration
-locals {
-  # Common tags applied to all resources
-  common_tags = {
-    Account     = get_env("TG_ACCOUNT", "unknown")
-    Region      = get_env("TG_REGION", "unknown")
-    Environment = get_env("TG_ENVIRONMENT", "unknown")
-    ManagedBy   = "terragrunt"
-    Project     = "multi-account-infrastructure"
-  }
-}
+# Configure Terraform settings
+terraform {
+  # Retry on common transient errors
+  retryable_errors = [
+    "(?s).*Error installing provider.*tcp.*connection reset by peer.*",
+    "(?s).*ssh_exchange_identification.*Connection closed by remote host.*",
+    "(?s).*Error configuring the backend.*timeout.*",
+    "(?s).*Error installing provider.*TLS handshake timeout.*"
+  ]
 
-# Common inputs passed to all child configurations
-inputs = {
-  aws_region       = get_env("TG_REGION", "us-east-1")
-  account_id       = get_env("TG_ACCOUNT_ID", "")
-  account          = get_env("TG_ACCOUNT", "")
-  environment      = get_env("TG_ENVIRONMENT", "")
-  assume_role_arn  = get_env("TG_ASSUME_ROLE_ARN", "")
-  default_tags     = local.common_tags
+  # Automatically format Terraform code
+  extra_arguments "auto_format" {
+    commands  = ["plan", "apply"]
+    arguments = ["-compact-warnings"]
+  }
 }
