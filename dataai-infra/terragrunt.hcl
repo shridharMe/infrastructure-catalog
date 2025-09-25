@@ -52,7 +52,7 @@ remote_state {
   config = {
     encrypt        = true
     bucket         = local.account_values.state_bucket
-    key            = terraform.tfstate"
+    key            = terraform.tfstate
     region         = local.account_values.region
     
   }
